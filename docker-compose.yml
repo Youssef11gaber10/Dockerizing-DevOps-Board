@@ -1,0 +1,51 @@
+version: '3.4'
+
+
+networks:
+  dbnetwork:
+  frontnetwork:
+     driver: bridge
+
+
+services:
+  react:
+    container_name: react_container
+    build: ./devopsFront
+    stdin_open: true
+    ports:
+      - "3000:3000"
+    networks:
+      - frontnetwork
+    volumes:
+      - ./devopsFront:/app
+      - /app/node_modules
+
+
+
+  talabat.apis:
+    container_name: dotnetcoreService_container
+    image: ${DOCKER_REGISTRY-}talabatapis
+    depends_on:
+      - sqldb
+    environment:
+      - DB_HOST=sqldb
+      - DB_NAME=TalabatDockerDB
+      - DB_SA_PASSWORD=password@12345
+    networks:
+      - dbnetwork
+      - frontnetwork
+    build:
+      context: .
+      dockerfile: Talabat.APIs/Dockerfile
+
+  sqldb:
+    container_name: app-db
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports: 
+      - "8082:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=password@12345
+    networks:
+      - dbnetwork  
+      - frontnetwork
